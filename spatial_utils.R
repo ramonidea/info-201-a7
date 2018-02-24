@@ -1,5 +1,4 @@
 # author: Joel Ross
-
 suppressWarnings(library(maps))
 suppressWarnings(library(sp))
 suppressWarnings(library(maptools))
