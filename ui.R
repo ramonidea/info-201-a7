@@ -13,10 +13,8 @@ ui <- fluidPage(
     sidebarPanel(
       useShinyjs(),
       fluidRow(
-        helpText("Summary: The summary of the global CO2 Emission Data"),
-        helpText("Country Source Breakdown: The sources of CO2 from one country"),
-        helpText("Map: The global Co2 Emission Data"),
-        h3("CO2 Emission in Year "),
+        
+        h3("Control Panel"),
         sliderInput("year", 
                          label = "Year",
                          min = 1998, max = 2014, value = 1998,
@@ -35,7 +33,7 @@ ui <- fluidPage(
         
         numericInput(
           inputId = "top",
-          label="# of Top COuntry(s) to show",
+          label="# of Top Country(s) to show",
           min = 1,
           max = 2821,
           step=1, value =10
@@ -48,6 +46,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(id = "mainPanel",
                   type = "tabs",
+                  tabPanel("Introduction", htmlOutput("intro")),
                   tabPanel("Trend",plotlyOutput("trend")),
                   tabPanel("Individual Country CO2 Emission Source Breakdown",
                            plotOutput("country"),

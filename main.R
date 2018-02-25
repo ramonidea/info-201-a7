@@ -8,15 +8,16 @@ library(mapdata)
 library(plotly)
 library(reshape2)
 
-#get data
+#Load the data from CSV
 emission.data <-
   read.csv("./data/WDI_emissions_Data.csv", fileEncoding = "UTF-8-BOM")
 emission.def <-
   read.csv("./data/WDI_emissions_Definition and Source.csv",
            fileEncoding = "UTF-8-BOM")
+#Remove the footnote of the dataset
 emission.data <- emission.data[seq(1,2821),]
 
-#Data clean on definition
+#Data clean on definition, only select the name and code
 emission.def <- emission.def %>%
   select(Code, Indicator.Name) 
 
@@ -25,6 +26,7 @@ intro <-
 are those stemming from the burning of fossil fuels and the manufacture of cement. They include carbon
 dioxide produced during consumption of solid, liquid, and gas fuels and gas flaring."
 
+#Return the value by input a country name, year, and serie code.
 getSpecificValue <- function(country, year, series) {
   result <- emission.data %>%
     filter(
@@ -35,6 +37,8 @@ getSpecificValue <- function(country, year, series) {
   return(result)
 }
 
+#Return the full name list based on the input Series.Code.
+#THis function is for replace the Series.Code colume with Serie of data full name
 getFullName <- function(names) {
   result = c()
   for (i in 1:nrow(names)) {
@@ -48,18 +52,17 @@ getFullName <- function(names) {
   return(result)
 }
 
-#Add Global Total Data row
+#Generate Global data set for Trend plot only.
 global.data <- emission.data %>%
   na.omit() %>%
   select(-Country.Code, -Most_Recent) %>%
   group_by(Series.Code) %>%
   summarise_all(sum)
-source.labels <- global.data["Series.Code"]
-source.labels <- getFullName(source.labels)
-global.data$Series.Code <- source.labels
+global.data$Series.Code <- getFullName(global.data["Series.Code"])
 rownames(global.data) <- global.data$Series.Code
 global.data <- select(global.data,-Series.Code)
 
+#Return the Trend lind graph, (input is ond country and one serie name)
 getTrend <- function(country, series) {
   if (country == "World") {
     data.result <- global.data[series, ]
@@ -79,8 +82,10 @@ getTrend <- function(country, series) {
                 size = 2,
                 color = 'Dark Blue') +
       ggtitle(paste0(series, ' Trend in ', country)) +
+      xlab("Year")+
       theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank())
+            axis.text.y = element_blank())+
+      theme(legend.direction = "vertical")
     return(gg)
   }else{
     return(ggplot()+ggtitle("No Enough Data to Show"))
@@ -88,7 +93,7 @@ getTrend <- function(country, series) {
 }
 
 
-
+#Return the country names, and fixed the ones with regex
 getCountrynames <- function() {
   country.names <-
     emission.data %>%
@@ -122,7 +127,9 @@ getCountrynames <- function() {
   return(country.names$code)
 }
 
-
+#Return the data of the emission source in one country in one year. 
+#Input is one country name and one year
+#return the data frame
 get_year_emission <- function(year, country) {
   emission.data <-
     emission.data %>%
@@ -148,6 +155,7 @@ get_year_emission <- function(year, country) {
   return(emission.data)
 }
 
+#For output purpose. Return the short version of the Source Name
 getName <- function(names) {
   result = c()
   for (i in 1:nrow(names)) {
@@ -163,7 +171,7 @@ getName <- function(names) {
   return(result)
 }
 
-
+#Return the pie chart plot in a coutry in one year.
 getYearPlot <- function(year, country) {
   num.year <- paste0("YR", year)
   country.data <- get_year_emission(num.year, country)
@@ -175,7 +183,6 @@ getYearPlot <- function(year, country) {
     ggplot(data = country.data, aes_string(x = factor(1), y = code, fill = "Series.Code")) +
     theme_light(base_size = 15, base_family = "") +
     geom_bar(
-      ,
       width = 1,
       position = "stack",
       stat = "identity",
@@ -204,6 +211,9 @@ getYearPlot <- function(year, country) {
   return(plot)
 }
 
+#Return the table for the country in the year of all of the percentage of the source of CO2
+#input is the year and the country name
+#output is the datatable
 getYearTable <- function(year, country) {
   num.year <- paste0("YR", year)
   country.data <- get_year_emission(num.year, country)
@@ -215,7 +225,9 @@ getYearTable <- function(year, country) {
   return(country.data)
 }
 
-#Global CO2 Emission Data
+#Global CO2 Emission Data map for one serie of data in the year
+#input is the year and serie name
+#output is the ggplot map
 global_emission_map <- function(year, series) {
   year <- paste0("YR", year)
   
@@ -226,7 +238,7 @@ global_emission_map <- function(year, series) {
     na.omit() %>% 
     filter(Series.Code == series) %>%
     select(Country.Code, year)
-  
+  #join world location data and the CO2 data
   world <- map_data("world")
   world$Country.Code <- iso.alpha(world$region, n = 3)
   global.data <- inner_join(world, global.emission, by = "Country.Code")
@@ -255,12 +267,12 @@ global_emission_map <- function(year, series) {
     scale_fill_brewer(palette = "Blues", name = "CO2 Emission kt (Millions)") +
     theme_dark() +
     ggtitle(paste0("World ", series, "in year", year))
-  gg
   return(gg)
-  
 }
 
-
+#Filter the top_n countries in the ranking for one serie in the year
+#Input is the year, serie name and # of top would like to see
+#return the table
 filterCountryTable <- function(year, series, top){
   year <- paste0("YR", year)
   year.sym <- rlang::sym(year)
