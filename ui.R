@@ -30,29 +30,34 @@ ui <- fluidPage(
         selectInput(
           inputId = "series", 
           label = "Enter one Serie of Data :",
-          choices = emission.def[,"Indicator.Name"]
-        )
+          choices = emission.def[seq(1,11),"Indicator.Name"]
+        ),
         
+        numericInput(
+          inputId = "top",
+          label="# of Top COuntry(s) to show",
+          min = 1,
+          max = 2821,
+          step=1, value =10
+        )
              
       )
 
     ),
     
-    # Main panel for displaying outputs ----
     mainPanel(
-      
-      # Output: Tabset w/ plot, summary, and table ----
       tabsetPanel(id = "mainPanel",
                   type = "tabs",
                   tabPanel("Trend",plotlyOutput("trend")),
-                  tabPanel("Country Source Breakdown Plot",
-                           plotOutput("country", click = "country.hover"),
-                           verbatimTextOutput('country.info')
+                  tabPanel("Individual Country CO2 Emission Source Breakdown",
+                           plotOutput("country"),
+                           tableOutput("country.table")
                            ),
-                  tabPanel("Country Source Breakdown Table", tableOutput("country.table")),
                   tabPanel("Map", 
-                           plotOutput("world.map",click = "map.click"),
-                           verbatimTextOutput('info'))
+                           plotOutput("world.map",click = "map.click",hover = "map.hover"),
+                           verbatimTextOutput('info')),
+                  tabPanel("Top Emission Country",
+                           dataTableOutput("rank.table"))
       )
       
     )
